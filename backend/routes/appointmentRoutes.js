@@ -5,22 +5,25 @@ const {
     createAppointment,
     getAppointments,
     getAppointmentById,
-    updateAppointmentStatus
+    updateAppointmentStatus,
+    deleteAppointment
 } = require("../controllers/appointmentController");
+
 const authMiddleware = require("../middlewares/authMiddleware");
 
-
-// Create appointment
+// Create Appointment
 router.post("/", authMiddleware, createAppointment);
 
-
-// Get all appointments
+// Get All Appointments
 router.get("/", authMiddleware, getAppointments);
 
-
-// Get single appointment by ID
+// Get Single Appointment
 router.get("/:id", authMiddleware, getAppointmentById);
-// Update appointment status
+
+// Update Appointment Status
 router.put("/:id", authMiddleware, updateAppointmentStatus);
+
+// Delete Appointment
+router.delete("/:id", authMiddleware, deleteAppointment);
 
 module.exports = router;
