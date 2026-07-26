@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CarePulse Portal - Live HTML Demo</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Link App CSS directly -->
+    <link rel="stylesheet" href="src/index.css" />
+
+    <!-- CDN Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+      /* Standalone fallback styles if fonts or variables are loading async */
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      .lucide-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      // Lucide Icon Helper Component for Babel CDN compilation
+      const Icon = ({ name, size = 20, color = "currentColor", className = "" }) => {
+        React.useEffect(() => {
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }, [name]);
+        return (
+          <i 
+            data-lucide={name} 
+            style={{ width: size, height: size, stroke: color, display: 'inline-flex' }}
+            className={`lucide-icon ${className}`}
+          />
+        );
+      };
+
+      // --- LOCAL STORAGE & SEED MOCK (Matches storage.js) ---
+      const KEYS = {
+        DOCTORS: 'hms_doctors',
+        PATIENTS: 'hms_patients',
+        APPOINTMENTS: 'hms_appointments',
+        USER: 'hms_user',
+        ACTIVITIES: 'hms_activities'
+      };
+
+      const DEFAULT_DOCTORS = [
+        { id: "DOC001", name: "Dr. Alexander Bennett", specialization: "Cardiology", experience: 12, phone: "+1 (555) 234-5678", email: "a.bennett@carepulse.com", availability: "Available" },
+        { id: "DOC002", name: "Dr. Sarah Jenkins", specialization: "Pediatrics", experience: 8, phone: "+1 (555) 345-6789", email: "s.jenkins@carepulse.com", availability: "Available" },
+        { id: "DOC003", name: "Dr. Robert Chen", specialization: "Neurology", experience: 15, phone: "+1 (555) 456-7890", email: "r.chen@carepulse.com", availability: "On Call" },
+        { id: "DOC004", name: "Dr. Emily Taylor", specialization: "Orthopedics", experience: 10, phone: "+1 (555) 567-8901", email: "e.taylor@carepulse.com", availability: "Available" },
+        { id: "DOC005", name: "Dr. Marcus Vance", specialization: "Dermatology", experience: 6, phone: "+1 (555) 678-9012", email: "m.vance@carepulse.com", availability: "Unavailable" }
+      ];
+
+      const DEFAULT_PATIENTS = [
+        { id: "PAT001", name: "Johnathan Miller", age: 45, gender: "Male", bloodGroup: "A+", phone: "+1 (555) 901-2345", email: "john.miller@gmail.com", address: "742 Evergreen Terrace, Springfield", disease: "Hypertension", assignedDoctor: "Dr. Alexander Bennett", admissionDate: "2026-07-01" },
+        { id: "PAT002", name: "Sophia Rodriguez", age: 29, gender: "Female", bloodGroup: "O-", phone: "+1 (555) 890-1234", email: "sophia.rod@yahoo.com", address: "123 Maple Street, Riverdale", disease: "Migraine Chronica", assignedDoctor: "Dr. Robert Chen", admissionDate: "2026-07-05" },
+        { id: "PAT003", name: "Oliver Thompson", age: 7, gender: "Male", bloodGroup: "B+", phone: "+1 (555) 789-0123", email: "thompson.family@gmail.com", address: "456 Oak Avenue, Fairview", disease: "Seasonal Allergies", assignedDoctor: "Dr. Sarah Jenkins", admissionDate: "2026-07-10" },
+        { id: "PAT004", name: "Emma Watson", age: 34, gender: "Female", bloodGroup: "AB+", phone: "+1 (555) 678-9012", email: "emma.watson@icloud.com", address: "89 Pine Road, Lakeside", disease: "Fractured Fibula", assignedDoctor: "Dr. Emily Taylor", admissionDate: "2026-07-12" },
+        { id: "PAT005", name: "Arthur Pendragon", age: 62, gender: "Male", bloodGroup: "O+", phone: "+1 (555) 567-8901", email: "king.arthur@gmail.com", address: "1 Camelot Lane, Avalon", disease: "Cardiovascular Blockage", assignedDoctor: "Dr. Alexander Bennett", admissionDate: "2026-07-13" }
+      ];
+
+      const DEFAULT_APPOINTMENTS = [
+        { id: "APT001", patientName: "Johnathan Miller", doctorName: "Dr. Alexander Bennett", date: "2026-07-14", time: "09:30", department: "Cardiology", status: "Scheduled" },
+        { id: "APT002", patientName: "Sophia Rodriguez", doctorName: "Dr. Robert Chen", date: "2026-07-14", time: "11:00", department: "Neurology", status: "Scheduled" },
+        { id: "APT003", patientName: "Oliver Thompson", doctorName: "Dr. Sarah Jenkins", date: "2026-07-15", time: "14:15", department: "Pediatrics", status: "Scheduled" },
+        { id: "APT004", patientName: "Emma Watson", doctorName: "Dr. Emily Taylor", date: "2026-07-13", time: "10:00", department: "Orthopedics", status: "Completed" },
+        { id: "APT005", patientName: "Arthur Pendragon", doctorName: "Dr. Alexander Bennett", date: "2026-07-13", time: "13:30", department: "Cardiology", status: "Pending" }
+      ];
+
+      const DEFAULT_ACTIVITIES = [
+        { id: 1, action: "Admin logged in successfully", type: "system", timestamp: "2026-07-13T13:50:00" },
+        { id: 2, action: "Admitted patient Arthur Pendragon", type: "patient", timestamp: "2026-07-13T13:30:00" }
+      ];
+
+      const initializeStorage = () => {
+        if (!localStorage.getItem(KEYS.DOCTORS)) localStorage.setItem(KEYS.DOCTORS, JSON.stringify(DEFAULT_DOCTORS));
+        if (!localStorage.getItem(KEYS.PATIENTS)) localStorage.setItem(KEYS.PATIENTS, JSON.stringify(DEFAULT_PATIENTS));
+        if (!localStorage.getItem(KEYS.APPOINTMENTS)) localStorage.setItem(KEYS.APPOINTMENTS, JSON.stringify(DEFAULT_APPOINTMENTS));
+        if (!localStorage.getItem(KEYS.ACTIVITIES)) localStorage.setItem(KEYS.ACTIVITIES, JSON.stringify(DEFAULT_ACTIVITIES));
+      };
+
+      const getItems = (key) => {
+        initializeStorage();
+        return JSON.parse(localStorage.getItem(key)) || [];
+      };
+
+      const setItems = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+
+      const logActivity = (action, type = "system") => {
+        const activities = getItems(KEYS.ACTIVITIES);
+        const newAct = { id: Date.now(), action, type, timestamp: new Date().toISOString() };
+        setItems(KEYS.ACTIVITIES, [newAct, ...activities].slice(0, 10));
+      };
+
+      // --- TOAST NOTIFICATIONS CONTEXT ---
+      const ToastContext = React.createContext(null);
+      const useToast = () => React.useContext(ToastContext);
+
+      // --- REUSABLE COMPONENTS ---
+      const StatCard = ({ title, value, iconName, color }) => {
+        const borderColors = {
+          primary: 'var(--primary)',
+          secondary: 'var(--secondary)',
+          success: 'var(--success)',
+          warning: 'var(--warning)',
+        };
+        const bgColors = {
+          primary: 'var(--primary-light)',
+          secondary: 'var(--secondary-light)',
+          success: 'var(--success-light)',
+          warning: 'var(--warning-light)',
+        };
+        const textColors = {
+          primary: 'var(--primary)',
+          secondary: 'var(--secondary)',
+          success: 'var(--success)',
+          warning: 'var(--warning)',
+        };
+
+        return (
+          <div className="card" style={{ padding: '20px', borderLeft: `4px solid ${borderColors[color]}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{title}</span>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: '800', marginTop: '4px' }}>{value}</h2>
+              </div>
+              <div style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '12px',
+                backgroundColor: bgColors[color],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: textColors[color]
+              }}>
+                <Icon name={iconName} size={22} color="currentColor" />
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // Custom SVG Chart component
+      const SvgChart = ({ title, type, data }) => {
+        const [hoveredIndex, setHoveredIndex] = React.useState(null);
+        if (!data || data.length === 0) return null;
+
+        const width = 500;
+        const height = 200;
+        const padding = 30;
+        const chartWidth = width - padding * 2;
+        const chartHeight = height - padding * 2;
+
+        const values = data.map(d => d.value);
+        const maxValue = Math.max(...values, 10);
+        const valueRange = maxValue;
+
+        const getX = (index) => padding + (index * (chartWidth / (data.length - 1 || 1)));
+        const getY = (value) => height - padding - ((value / valueRange) * chartHeight);
+
+        const linePath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.value)}`).join(' ');
+        const areaPath = `${linePath} L ${getX(data.length - 1)} ${height - padding} L ${getX(0)} ${height - padding} Z`;
+
+        return (
+          <div className="card" style={{ padding: '20px', height: '240px', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '10px' }}>{title}</h3>
+            <div style={{ flexGrow: 1 }}>
+              <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
+                <defs>
+                  <linearGradient id="demoGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {/* Horizontal Grid */}
+                {[0, 0.5, 1].map((ratio, i) => {
+                  const y = padding + ratio * chartHeight;
+                  return (
+                    <line key={i} x1={padding} y1={y} x2={width - padding} y2={y} stroke="var(--border-color)" strokeWidth="0.8" strokeDasharray="4,4" />
+                  );
+                })}
+                {/* Line Path */}
+                {type === 'line' && (
+                  <>
+                    <path d={areaPath} fill="url(#demoGradient)" />
+                    <path d={linePath} fill="none" stroke="var(--primary)" strokeWidth="3" />
+                    {data.map((d, i) => (
+                      <circle
+                        key={i}
+                        cx={getX(i)}
+                        cy={getY(d.value)}
+                        r={hoveredIndex === i ? 6 : 4}
+                        fill="var(--bg-secondary)"
+                        stroke="var(--primary)"
+                        strokeWidth="2.5"
+                        onMouseEnter={() => setHoveredIndex(i)}
+                        onMouseLeave={() => setHoveredIndex(null)}
+                      />
+                    ))}
+                  </>
+                )}
+                {/* Bar Chart */}
+                {type === 'bar' && (
+                  <g>
+                    {data.map((d, i) => {
+                      const barWidth = 24;
+                      const gap = chartWidth / data.length;
+                      const x = padding + (i * gap) + (gap - barWidth) / 2;
+                      const y = getY(d.value);
+                      const h = height - padding - y;
+                      return (
+                        <rect key={i} x={x} y={y} width={barWidth} height={h} rx="3" fill="var(--primary)" />
+                      );
+                    })}
+                  </g>
+                )}
+                {/* Labels */}
+                {data.map((d, i) => (
+                  <text key={i} x={type === 'line' ? getX(i) : padding + (i * (chartWidth / data.length)) + (chartWidth / data.length) / 2} y={height - padding + 15} fill="var(--text-tertiary)" fontSize="9" textAnchor="middle">
+                    {d.label}
+                  </text>
+                ))}
+              </svg>
+            </div>
+          </div>
+        );
+      };
+
+      // Modal Component
+      const Modal = ({ isOpen, onClose, title, children }) => {
+        if (!isOpen) return null;
+        return (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px'
+          }} onClick={onClose}>
+            <div style={{
+              backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+              borderRadius: '16px', width: '100%', maxWidth: '500px',
+              display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid var(--border-color)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{title}</h3>
+                <button onClick={onClose} style={{ fontSize: '1.2rem' }}>&times;</button>
+              </div>
+              <div style={{ padding: '24px', overflowY: 'auto' }}>
+                {children}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // Dialog Confirm Delete Component
+      const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
+        if (!isOpen) return null;
+        return (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 1100,
+            display: 'flex', justifyContent: 'center', alignItems: 'center'
+          }} onClick={onClose}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '380px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '24px' }}>
+                <h4 style={{ fontWeight: '700', marginBottom: '8px' }}>{title}</h4>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{message}</p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 24px', backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)' }}>
+                <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                <button className="btn btn-accent" onClick={onConfirm}>Confirm</button>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // --- PAGES ---
+
+      // Login Page View
+      const Login = ({ onLogin }) => {
+        const [username, setUsername] = React.useState('');
+        const [password, setPassword] = React.useState('');
+        const [error, setError] = React.useState('');
+        const { showToast } = useToast();
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if (username.toLowerCase() === 'admin' && password === 'admin123') {
+            const user = { username: 'Admin', role: 'Administrator', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' };
+            localStorage.setItem(KEYS.USER, JSON.stringify(user));
+            logActivity("Admin logged in successfully", "system");
+            onLogin(user);
+            showToast("Logged in successfully", "success");
+          } else {
+            setError("Invalid details (demo: admin / admin123)");
+            showToast("Invalid credentials", "error");
+          }
+        };
+
+        return (
+          <div style={{ display: 'flex', minHeight: '100vh', width: '100vw' }}>
+            <div style={{ flex: 1.2, backgroundColor: 'var(--bg-primary)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '40px', color: '#ffffff', backgroundImage: 'url("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(9, 13, 22, 0.75)', zIndex: 1 }}></div>
+              <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="flex align-center gap-2" style={{ backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: '30px', alignSelf: 'flex-start' }}>
+                  <Icon name="heart-pulse" size={24} />
+                  <strong>CarePulse Demo</strong>
+                </div>
+                <div style={{ margin: 'auto 0', maxWidth: '480px' }}>
+                  <h1 style={{ fontSize: '2.2rem', fontWeight: '800', lineHeight: '1.2', marginBottom: '16px' }}>Responsive Hospital Portal</h1>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: '1.5' }}>Manage clinic registers, consult schedulers, and client records securely.</p>
+                </div>
+                <div style={{ backgroundColor: 'rgba(9,13,22,0.6)', padding: '16px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '700', opacity: 0.6 }}>DEMO ACCESS:</span>
+                  <div style={{ display: 'flex', gap: '20px', fontSize: '0.9rem', marginTop: '4px' }}>
+                    <span>Username: <strong>admin</strong></span>
+                    <span>Password: <strong>admin123</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+              <div style={{ width: '100%', maxWidth: '340px' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '8px' }}>Sign In</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>Access your administrative workspace</p>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Username</label>
+                    <input type="text" className="form-input" placeholder="admin" value={username} onChange={e => setUsername(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Password</label>
+                    <input type="password" className="form-input" placeholder="admin123" value={password} onChange={e => setPassword(e.target.value)} required />
+                  </div>
+                  {error && <span style={{ color: 'var(--accent)', fontSize: '0.8rem' }}>{error}</span>}
+                  <button type="submit" className="btn btn-primary" style={{ height: '42px', marginTop: '10px' }}>Sign In</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // Dashboard View
+      const Dashboard = ({ setPage }) => {
+        const [stats, setStats] = React.useState({ patients: 0, doctors: 0, appointments: 0, pending: 0 });
+        const [logs, setLogs] = React.useState([]);
+
+        React.useEffect(() => {
+          const patients = getItems(KEYS.PATIENTS);
+          const doctors = getItems(KEYS.DOCTORS);
+          const appointments = getItems(KEYS.APPOINTMENTS);
+          const history = getItems(KEYS.ACTIVITIES);
+
+          setStats({
+            patients: patients.length,
+            doctors: doctors.length,
+            appointments: appointments.length,
+            pending: appointments.filter(a => a.status === 'Scheduled' || a.status === 'Pending').length
+          });
+          setLogs(history.slice(0, 4));
+        }, []);
+
+        const trendData = [
+          { label: 'Mon', value: 3 },
+          { label: 'Tue', value: 5 },
+          { label: 'Wed', value: 2 },
+          { label: 'Thu', value: 8 },
+          { label: 'Fri', value: 6 },
+          { label: 'Sat', value: stats.patients || 5 }
+        ];
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '20px', borderRadius: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Admin Dashboard Hub</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Welcome to CarePulse. Manage clinical activities below.</p>
+              </div>
+              <span className="badge badge-info" style={{ padding: '8px 12px' }}>CarePulse v1.0</span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-6">
+              <StatCard title="Total Patients" value={stats.patients} iconName="users" color="primary" />
+              <StatCard title="Doctors Registered" value={stats.doctors} iconName="user-square-2" color="secondary" />
+              <StatCard title="Total Appts" value={stats.appointments} iconName="calendar-days" color="success" />
+              <StatCard title="Active Scheds" value={stats.pending} iconName="clock" color="warning" />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <SvgChart title="Client Admissions (Line)" type="line" data={trendData} />
+              <SvgChart title="Appointments (Department Split)" type="bar" data={[
+                { label: 'Card.', value: 4 }, { label: 'Pedi.', value: 2 }, { label: 'Neur.', value: 3 }
+              ]} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '24px' }}>
+              <div className="card">
+                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '16px' }}>Quick Actions</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button className="btn btn-secondary" onClick={() => setPage('patients')} style={{ height: '70px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <Icon name="users" size={16} />
+                    <span>Patients Register</span>
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => setPage('appointments')} style={{ height: '70px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <Icon name="calendar-days" size={16} />
+                    <span>Book Consult</span>
+                  </button>
+                </div>
+              </div>
+              <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '16px' }}>System Logs</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {logs.map((log) => (
+                    <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
+                      <span>{log.action}</span>
+                      <span style={{ color: 'var(--text-tertiary)' }}>{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // Patients View
+      const Patients = () => {
+        const [patients, setPatients] = React.useState([]);
+        const [doctors, setDoctors] = React.useState([]);
+        const [searchTerm, setSearchTerm] = React.useState('');
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [isDelOpen, setIsDelOpen] = React.useState(false);
+        const [selected, setSelected] = React.useState(null);
+        
+        const { showToast } = useToast();
+
+        const [formData, setFormData] = React.useState({
+          name: '', age: '', gender: 'Male', bloodGroup: 'O+', phone: '', email: '', address: '', disease: '', assignedDoctor: '', admissionDate: '2026-07-13'
+        });
+
+        React.useEffect(() => {
+          setPatients(getItems(KEYS.PATIENTS));
+          setDoctors(getItems(KEYS.DOCTORS));
+        }, []);
+
+        const handleOpenAdd = () => {
+          setSelected(null);
+          setFormData({ name: '', age: '', gender: 'Male', bloodGroup: 'O+', phone: '', email: '', address: '', disease: '', assignedDoctor: doctors[0]?.name || '', admissionDate: '2026-07-13' });
+          setIsModalOpen(true);
+        };
+
+        const handleOpenEdit = (p) => {
+          setSelected(p);
+          setFormData(p);
+          setIsModalOpen(true);
+        };
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          const list = getItems(KEYS.PATIENTS);
+          if (selected) {
+            const index = list.findIndex(p => p.id === selected.id);
+            list[index] = { ...selected, ...formData };
+            setItems(KEYS.PATIENTS, list);
+            showToast("Patient records saved", "success");
+            logActivity(`Updated patient details for ${formData.name}`, "patient");
+          } else {
+            const newId = `PAT${String(list.length + 1).padStart(3, '0')}`;
+            list.push({ id: newId, ...formData });
+            setItems(KEYS.PATIENTS, list);
+            showToast("Patient registered successfully", "success");
+            logActivity(`Registered new patient: ${formData.name}`, "patient");
+          }
+          setIsModalOpen(false);
+          setPatients(getItems(KEYS.PATIENTS));
+        };
+
+        const handleOpenDelete = (p) => {
+          setSelected(p);
+          setIsDelOpen(true);
+        };
+
+        const confirmDelete = () => {
+          const list = getItems(KEYS.PATIENTS);
+          const filtered = list.filter(p => p.id !== selected.id);
+          setItems(KEYS.PATIENTS, filtered);
+          showToast("Patient record removed", "success");
+          logActivity(`Removed patient profile: ${selected.name}`, "patient");
+          setIsDelOpen(false);
+          setPatients(filtered);
+        };
+
+        const filtered = patients.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        return (
+          <div className="flex flex-col gap-6 animate-fade">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '16px 20px', borderRadius: '16px' }}>
+              <input type="text" placeholder="Search patients..." className="form-input" style={{ maxWidth: '300px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <button className="btn btn-primary" onClick={handleOpenAdd}>
+                <Icon name="plus" size={16} />
+                <span>Register Patient</span>
+              </button>
+            </div>
+
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Age/Gender</th>
+                    <th>Blood</th>
+                    <th>Assigned Doctor</th>
+                    <th>Diagnosis</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(p => (
+                    <tr key={p.id}>
+                      <td style={{ fontWeight: '700', color: 'var(--primary)' }}>{p.id}</td>
+                      <td><strong>{p.name}</strong></td>
+                      <td>{p.age} Yrs / {p.gender}</td>
+                      <td><span className="badge badge-info">{p.bloodGroup}</span></td>
+                      <td>{p.assignedDoctor}</td>
+                      <td>{p.disease}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button style={{ color: 'var(--primary)' }} onClick={() => handleOpenEdit(p)}><Icon name="edit-2" size={14} /></button>
+                          <button style={{ color: 'var(--accent)' }} onClick={() => handleOpenDelete(p)}><Icon name="trash-2" size={14} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selected ? "Edit Record" : "Add Patient"}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input type="text" className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Age</label>
+                  <input type="number" className="form-input" value={formData.age} onChange={e => setFormData({ ...formData, age: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Gender</label>
+                  <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Diagnosis</label>
+                  <input type="text" className="form-input" value={formData.disease} onChange={e => setFormData({ ...formData, disease: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Assigned Consultant</label>
+                  <select className="form-input" value={formData.assignedDoctor} onChange={e => setFormData({ ...formData, assignedDoctor: e.target.value })}>
+                    {doctors.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                  </select>
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>Save Patient</button>
+              </form>
+            </Modal>
+
+            <ConfirmDialog isOpen={isDelOpen} onClose={() => setIsDelOpen(false)} onConfirm={confirmDelete} title="Discharge Record" message="Discharge and delete patient details permanently?" />
+          </div>
+        );
+      };
+
+      // Doctors View
+      const Doctors = () => {
+        const [doctors, setDoctors] = React.useState([]);
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [selected, setSelected] = React.useState(null);
+        const { showToast } = useToast();
+
+        const [formData, setFormData] = React.useState({
+          name: '', specialization: 'Cardiology', experience: '', phone: '', email: '', availability: 'Available'
+        });
+
+        React.useEffect(() => {
+          setDoctors(getItems(KEYS.DOCTORS));
+        }, []);
+
+        const handleOpenAdd = () => {
+          setSelected(null);
+          setFormData({ name: '', specialization: 'Cardiology', experience: '', phone: '', email: '', availability: 'Available' });
+          setIsModalOpen(true);
+        };
+
+        const handleOpenEdit = (d) => {
+          setSelected(d);
+          setFormData(d);
+          setIsModalOpen(true);
+        };
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          const list = getItems(KEYS.DOCTORS);
+          if (selected) {
+            const index = list.findIndex(d => d.id === selected.id);
+            list[index] = { ...selected, ...formData };
+            setItems(KEYS.DOCTORS, list);
+            showToast("Doctor register updated", "success");
+          } else {
+            const newId = `DOC${String(list.length + 1).padStart(3, '0')}`;
+            list.push({ id: newId, ...formData });
+            setItems(KEYS.DOCTORS, list);
+            showToast("Doctor registered", "success");
+          }
+          setIsModalOpen(false);
+          setDoctors(getItems(KEYS.DOCTORS));
+        };
+
+        return (
+          <div className="flex flex-col gap-6 animate-fade">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '16px 20px', borderRadius: '16px' }}>
+              <button className="btn btn-primary" onClick={handleOpenAdd}>
+                <Icon name="plus" size={16} />
+                <span>Register Consultant</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6">
+              {doctors.map(doc => (
+                <div key={doc.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="stethoscope" color="var(--primary)" size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{doc.name}</h3>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{doc.id}</span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span><strong>Dept:</strong> {doc.specialization}</span>
+                    <span><strong>Experience:</strong> {doc.experience} Years</span>
+                    <span><strong>Mail:</strong> {doc.email}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                    <span className="badge badge-success">{doc.availability}</span>
+                    <button style={{ color: 'var(--primary)', fontSize: '0.85rem' }} onClick={() => handleOpenEdit(doc)}>Edit Profile</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selected ? "Edit Profile" : "Register Doctor"}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Doctor Name</label>
+                  <input type="text" className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Specialty</label>
+                  <select className="form-input" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })}>
+                    <option value="Cardiology">Cardiology</option>
+                    <option value="Pediatrics">Pediatrics</option>
+                    <option value="Neurology">Neurology</option>
+                    <option value="General Medicine">General Medicine</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Experience (Years)</label>
+                  <input type="number" className="form-input" value={formData.experience} onChange={e => setFormData({ ...formData, experience: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Contact Mail</label>
+                  <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>Save Details</button>
+              </form>
+            </Modal>
+          </div>
+        );
+      };
+
+      // Appointments View
+      const Appointments = () => {
+        const [appointments, setAppointments] = React.useState([]);
+        const [patients, setPatients] = React.useState([]);
+        const [doctors, setDoctors] = React.useState([]);
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [selected, setSelected] = React.useState(null);
+        const { showToast } = useToast();
+
+        const [formData, setFormData] = React.useState({
+          patientName: '', doctorName: '', date: '2026-07-14', time: '10:00', department: 'Cardiology', status: 'Scheduled'
+        });
+
+        React.useEffect(() => {
+          setAppointments(getItems(KEYS.APPOINTMENTS));
+          setPatients(getItems(KEYS.PATIENTS));
+          setDoctors(getItems(KEYS.DOCTORS));
+        }, []);
+
+        const handleOpenAdd = () => {
+          setSelected(null);
+          setFormData({
+            patientName: patients[0]?.name || '',
+            doctorName: doctors[0]?.name || '',
+            date: '2026-07-14',
+            time: '10:00',
+            department: doctors[0]?.specialization || 'Cardiology',
+            status: 'Scheduled'
+          });
+          setIsModalOpen(true);
+        };
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          const list = getItems(KEYS.APPOINTMENTS);
+          const chosenDoc = doctors.find(d => d.name === formData.doctorName);
+          const data = {
+            ...formData,
+            department: chosenDoc ? chosenDoc.specialization : formData.department
+          };
+
+          if (selected) {
+            const index = list.findIndex(a => a.id === selected.id);
+            list[index] = { ...selected, ...data };
+            setItems(KEYS.APPOINTMENTS, list);
+            showToast("Consult rescheduled", "success");
+          } else {
+            const newId = `APT${String(list.length + 1).padStart(3, '0')}`;
+            list.push({ id: newId, ...data });
+            setItems(KEYS.APPOINTMENTS, list);
+            showToast("Appointment Booked", "success");
+          }
+          setIsModalOpen(false);
+          setAppointments(getItems(KEYS.APPOINTMENTS));
+        };
+
+        return (
+          <div className="flex flex-col gap-6 animate-fade">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '16px 20px', borderRadius: '16px' }}>
+              <button className="btn btn-primary" onClick={handleOpenAdd}>
+                <Icon name="plus" size={16} />
+                <span>Book Appointment</span>
+              </button>
+            </div>
+
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Appt ID</th>
+                    <th>Patient Name</th>
+                    <th>Consulting Doctor</th>
+                    <th>Dept</th>
+                    <th>Date/Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appointments.map(apt => (
+                    <tr key={apt.id}>
+                      <td style={{ fontWeight: '700', color: 'var(--primary)' }}>{apt.id}</td>
+                      <td><strong>{apt.patientName}</strong></td>
+                      <td>{apt.doctorName}</td>
+                      <td><span className="badge badge-info">{apt.department}</span></td>
+                      <td>{apt.date} at {apt.time}</td>
+                      <td><span className="badge badge-success">{apt.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Book Consult">
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Client Name</label>
+                  <select className="form-input" value={formData.patientName} onChange={e => setFormData({ ...formData, patientName: e.target.value })}>
+                    {patients.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Consultant</label>
+                  <select className="form-input" value={formData.doctorName} onChange={e => setFormData({ ...formData, doctorName: e.target.value })}>
+                    {doctors.map(d => <option key={d.id} value={d.name}>{d.name} ({d.specialization})</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Booking Date</label>
+                  <input type="date" className="form-input" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Time</label>
+                  <input type="time" className="form-input" value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} required />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>Book Appointment</button>
+              </form>
+            </Modal>
+          </div>
+        );
+      };
+
+      // Profile settings view
+      const Profile = () => {
+        const [user, setUser] = React.useState({ username: '', role: '', avatar: '' });
+        const { showToast } = useToast();
+
+        React.useEffect(() => {
+          setUser(JSON.parse(localStorage.getItem(KEYS.USER)) || { username: 'Admin', role: 'Administrator', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' });
+        }, []);
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          localStorage.setItem(KEYS.USER, JSON.stringify(user));
+          showToast("Profile config updated", "success");
+          window.dispatchEvent(new Event('storage'));
+        };
+
+        return (
+          <div className="card animate-fade" style={{ maxWidth: '400px', margin: '0 auto' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Profile Settings</h3>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Username</label>
+                <input type="text" className="form-input" value={user.username} onChange={e => setUser({ ...user, username: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Profile Pic Link</label>
+                <input type="text" className="form-input" value={user.avatar} onChange={e => setUser({ ...user, avatar: e.target.value })} required />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ height: '40px' }}>Save Profiles</button>
+            </form>
+          </div>
+        );
+      };
+
+      // --- APPLICATION ROOT SYSTEM ---
+      const App = () => {
+        const [user, setUser] = React.useState(null);
+        const [page, setPage] = React.useState('dashboard');
+        const [theme, setTheme] = React.useState(localStorage.getItem('theme') || 'light');
+        const [toasts, setToasts] = React.useState([]);
+
+        React.useEffect(() => {
+          initializeStorage();
+          const currentUser = localStorage.getItem(KEYS.USER);
+          if (currentUser) {
+            setUser(JSON.parse(currentUser));
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+        }, [theme]);
+
+        const showToast = React.useCallback((message, type = 'success') => {
+          const id = Date.now();
+          setToasts((prev) => [...prev, { id, message, type }]);
+          setTimeout(() => {
+            setToasts((prev) => prev.filter((t) => t.id !== id));
+          }, 3000);
+        }, []);
+
+        const toggleTheme = () => {
+          const next = theme === 'light' ? 'dark' : 'light';
+          setTheme(next);
+          localStorage.setItem('theme', next);
+          showToast(`Switched to ${next} theme`, 'info');
+        };
+
+        const handleLogout = () => {
+          localStorage.removeItem(KEYS.USER);
+          setUser(null);
+          showToast("Admin logged out", "success");
+        };
+
+        if (!user) {
+          return (
+            <ToastContext.Provider value={{ showToast }}>
+              <Login onLogin={setUser} />
+              <ToastContainer toasts={toasts} />
+            </ToastContext.Provider>
+          );
+        }
+
+        return (
+          <ToastContext.Provider value={{ showToast }}>
+            <div style={{ display: 'flex', minHeight: '100vh', width: '100vw' }}>
+              
+              {/* Sidebar */}
+              <aside style={{ width: '260px', backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ backgroundColor: 'var(--primary)', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                    <Icon name="heart-pulse" size={22} />
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: '800', letterSpacing: '-0.02em' }}>CarePulse</h2>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Admin Hub</span>
+                  </div>
+                </div>
+
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '20px 0', flexGrow: 1 }}>
+                  {[
+                    { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+                    { id: 'patients', label: 'Patients', icon: 'users' },
+                    { id: 'doctors', label: 'Doctors', icon: 'user-square-2' },
+                    { id: 'appointments', label: 'Appointments', icon: 'calendar-days' },
+                    { id: 'profile', label: 'Profile Settings', icon: 'user-circle' },
+                  ].map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => setPage(item.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px', fontSize: '0.9rem', fontWeight: '600',
+                        color: page === item.id ? 'var(--primary)' : 'var(--text-secondary)',
+                        backgroundColor: page === item.id ? 'var(--primary-glow)' : 'transparent',
+                        borderLeft: page === item.id ? '4px solid var(--primary)' : '4px solid transparent',
+                        width: '100%', textAlign: 'left'
+                      }}
+                    >
+                      <Icon name={item.icon} size={18} color="currentColor" />
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </nav>
+
+                <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)' }}>
+                  <button className="btn btn-secondary w-full" onClick={handleLogout} style={{ color: 'var(--accent)', justifyContent: 'flex-start' }}>
+                    <Icon name="log-out" size={16} />
+                    <span style={{ marginLeft: '8px' }}>Log Out</span>
+                  </button>
+                </div>
+              </aside>
+
+              {/* Main Content Area */}
+              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
+                <header style={{ height: '70px', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px' }}>
+                  <h1 style={{ fontSize: '1.25rem', fontWeight: '800' }}>
+                    {page.toUpperCase()}
+                  </h1>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <button className="btn-icon" onClick={toggleTheme} title="Toggle Dark Theme">
+                      <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} />
+                    </button>
+                    <div className="flex align-center gap-2">
+                      <img src={user.avatar} style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>{user.username}</span>
+                    </div>
+                  </div>
+                </header>
+
+                <main style={{ padding: '24px', flexGrow: 1, backgroundColor: 'var(--bg-primary)' }}>
+                  {page === 'dashboard' && <Dashboard setPage={setPage} />}
+                  {page === 'patients' && <Patients />}
+                  {page === 'doctors' && <Doctors />}
+                  {page === 'appointments' && <Appointments />}
+                  {page === 'profile' && <Profile />}
+                </main>
+              </div>
+
+            </div>
+            <ToastContainer toasts={toasts} />
+          </ToastContext.Provider>
+        );
+      };
+
+      // Toast Notification List Container
+      const ToastContainer = ({ toasts }) => {
+        return (
+          <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', width: '320px' }}>
+            {toasts.map(toast => (
+              <div
+                key={toast.id}
+                style={{
+                  display: 'flex', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', color: '#ffffff',
+                  fontSize: '0.85rem', fontWeight: '500', boxShadow: 'var(--shadow-md)',
+                  backgroundColor: toast.type === 'success' ? '#10b981' : toast.type === 'error' ? '#f43f5e' : '#6366f1'
+                }}
+              >
+                <span>{toast.message}</span>
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
