@@ -1,29 +1,16 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  createAppointment,
-  getAllAppointments,
-  getAppointmentById,
-  updateAppointment,
-  deleteAppointment,
-} = require("../controllers/appointmentController");
-
+const { getDashboardStats } = require("../controllers/adminController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const roleMiddleware = require("../middlewares/roleMiddleware");
 
-// Create Appointment
-router.post("/", authMiddleware, createAppointment);
-
-// Get All Appointments
-router.get("/", authMiddleware, getAllAppointments);
-
-// Get Appointment by ID
-router.get("/:id", authMiddleware, getAppointmentById);
-
-// Update Appointment
-router.put("/:id", authMiddleware, updateAppointment);
-
-// Delete Appointment
-router.delete("/:id", authMiddleware, deleteAppointment);
+// Admin Dashboard
+router.get(
+  "/dashboard",
+  authMiddleware,
+  roleMiddleware("Admin"),
+  getDashboardStats
+);
 
 module.exports = router;
