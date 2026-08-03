@@ -22,8 +22,30 @@ const createAppointment = async (req, res) => {
 const getAllAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find()
-      .populate("patient", "name email")
-      .populate("doctor", "name specialization");
+      .populate("patient", "firstName lastName email")
+      .populate("doctor", "name specialization consultationFee");
+
+    res.status(200).json({
+      success: true,
+      count: appointments.length,
+      data: appointments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Get Logged-in Patient Appointments
+const getMyAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find({
+      patient: req.user.id,
+    })
+      .populate("doctor", "name specialization consultationFee")
+      .sort({ appointmentDate: -1 });
 
     res.status(200).json({
       success: true,
@@ -42,8 +64,8 @@ const getAllAppointments = async (req, res) => {
 const getAppointmentById = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id)
-      .populate("patient", "name email")
-      .populate("doctor", "name specialization");
+      .populate("patient", "firstName lastName email")
+      .populate("doctor", "name specialization consultationFee");
 
     if (!appointment) {
       return res.status(404).json({
@@ -96,6 +118,40 @@ const updateAppointment = async (req, res) => {
   }
 };
 
+// Update Appointment Status
+const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Appointment status updated successfully",
+      data: appointment,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // Delete Appointment
 const deleteAppointment = async (req, res) => {
   try {
@@ -123,7 +179,9 @@ const deleteAppointment = async (req, res) => {
 module.exports = {
   createAppointment,
   getAllAppointments,
+  getMyAppointments,
   getAppointmentById,
   updateAppointment,
+  updateAppointmentStatus,
   deleteAppointment,
 };

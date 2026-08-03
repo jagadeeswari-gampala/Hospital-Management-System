@@ -6,6 +6,7 @@ const {
   getAllAppointments,
   getAppointmentById,
   updateAppointment,
+  updateAppointmentStatus,
   deleteAppointment,
 } = require("../controllers/appointmentController");
 
@@ -22,6 +23,9 @@ router.get("/:id", authMiddleware, getAppointmentById);
 
 // Update Appointment
 router.put("/:id", authMiddleware, updateAppointment);
+
+// Update Appointment Status
+router.patch("/:id/status", authMiddleware, updateAppointmentStatus);
 
 // Delete Appointment
 router.delete("/:id", authMiddleware, deleteAppointment);
